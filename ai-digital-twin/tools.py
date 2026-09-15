@@ -402,11 +402,12 @@ def handle_tool_call(tool_calls):
                 result = f"Tool execution failed: {str(e)}"
 
         results.append(
-            {
-                "role": "tool",
-                "content": json.dumps(result),
-                "tool_call_id": tool_call.id,
-            }
-        )
+    {
+        "role": "tool",
+        "tool_call_id": tool_call.id,
+        "name": tool_name,
+        "content": str(result),
+    }
+                    )
 
     return results

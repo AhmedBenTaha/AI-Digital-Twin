@@ -1,7 +1,8 @@
+import os
+
 import gradio as gr
 from dotenv import load_dotenv
 from openai import OpenAI
-import os
 
 from context import TWIN_SYSTEM_PROMPT
 from tools import tools, handle_tool_call
@@ -16,8 +17,10 @@ load_dotenv(override=True)
 
 MODEL_NAME = "openai/gpt-oss-120b"
 
-client = OpenAI(base_url="https://api.groq.com/openai/v1",api_key=os.getenv("GROQ_API_KEY"))
-
+client = OpenAI(
+    base_url="https://api.groq.com/openai/v1",
+    api_key=os.getenv("GROQ_API_KEY"),
+)
 
 SYSTEM_MESSAGE = {
     "role": "system",
@@ -30,11 +33,15 @@ SYSTEM_MESSAGE = {
 # ============================================================
 
 def chat(message, history):
-    """
-    Handle a user message and return the assistant response.
-    """
-    history = [{"role":h["role"],"content":h["content"]} for h in history]
-    
+
+    history = [
+        {
+            "role": item["role"],
+            "content": item["content"],
+        }
+        for item in history
+    ]
+
     messages = [
         SYSTEM_MESSAGE,
         *history,
@@ -44,39 +51,52 @@ def chat(message, history):
         },
     ]
 
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=messages,
-        tools=tools,
-    )
+    # ========================================================
+    # Agent Loop
+    # ========================================================
 
-    # --------------------------------------------------------
-    # Tool-calling loop
-    # --------------------------------------------------------
+    for _ in range(10):
 
-    while response.choices[0].finish_reason == "tool_calls":
-
-        assistant_message = response.choices[0].message
-
-        tool_calls = assistant_message.tool_calls
-
-        # Add assistant tool-call message
-        messages.append(assistant_message)
-
-        # Execute tools
-        tool_results = handle_tool_call(tool_calls)
-
-        # Add tool results
-        messages.extend(tool_results)
-
-        # Ask the model again using the tool results
         response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=messages,
             tools=tools,
+            tool_choice="auto",
         )
 
-    return response.choices[0].message.content
+        assistant_message = response.choices[0].message
+
+        print(
+            f"Finish reason: {response.choices[0].finish_reason}",
+            flush=True,
+        )
+
+        # ----------------------------------------------------
+        # No tool call -> final answer
+        # ----------------------------------------------------
+
+        if not assistant_message.tool_calls:
+            return assistant_message.content
+
+        # ----------------------------------------------------
+        # Tool calls detected
+        # ----------------------------------------------------
+
+        print(
+            f"Tool calls detected: {len(assistant_message.tool_calls)}",
+            flush=True,
+        )
+
+        messages.append(assistant_message)
+
+        # Execute tools
+        tool_results = handle_tool_call(
+            assistant_message.tool_calls
+        )
+
+        messages.extend(tool_results)
+
+    return "I couldn't complete the request."
 
 
 # ============================================================

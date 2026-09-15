@@ -1,39 +1,47 @@
 # AI Digital Twin
 
-An AI-powered Digital Twin that represents my professional profile and allows users to ask questions about my background, skills, education, projects, experience, and certifications.
+An AI-powered Digital Twin that represents my professional profile and allows visitors to interact with an AI version of me.
 
-The system uses **LLM Tool Calling** to retrieve the required information and generate natural, accurate responses based on my actual profile.
+The system can answer questions about my **background, skills, education, projects, experience, and certifications** using information extracted from my CV and profile summary.
+
+It also demonstrates practical **LLM Tool Calling**, allowing the model to call external functions when a task requires an action such as recording contact information, logging unknown questions, getting the current time, or creating follow-up tasks.
 
 ---
 
 ## Overview
 
-Instead of using a traditional RAG pipeline, this project uses **Tool Calling**.
+Instead of building a traditional RAG pipeline with embeddings and a vector database, this project uses **LLM Tool Calling**.
 
-The LLM decides which tool should be called based on the user's question, retrieves the relevant information, and then generates the final response.
+The LLM receives the user's message and decides whether one of the available tools should be called.
+
+The tool executes the requested action and returns its result to the LLM.
+
+The LLM then uses that result to generate the final response.
 
 ### Example
 
 **User:**
 
-> What projects has Ahmed worked on?
+```text
+What time is it right now?
+```
 
 **LLM:**
 
 ```text
-Call → get_projects()
+Call → get_current_time()
 ```
 
 **Tool:**
 
 ```text
-Returns the available project information
+Returns the current date and time
 ```
 
 **LLM:**
 
 ```text
-Generates a natural response using the tool result
+Generates the final response using the tool result
 ```
 
 ---
@@ -41,159 +49,376 @@ Generates a natural response using the tool result
 ## Architecture
 
 ```text
-                    User
-                      │
-                      ▼
-                  Gradio UI
-                      │
-                      ▼
-                     LLM
-                      │
-                Tool Calling
-                      │
-        ┌─────────────┼─────────────┐
-        │             │             │
-        ▼             ▼             ▼
-     Profile       Projects       Skills
-        │             │             │
-        └─────────────┼─────────────┘
-                      │
-                      ▼
-                 Tool Result
-                      │
-                      ▼
-                     LLM
-                      │
-                      ▼
-                Final Answer
+                         User
+                           │
+                           ▼
+                     Gradio UI
+                           │
+                           ▼
+                          LLM
+                           │
+                    Tool Calling
+                           │
+          ┌────────────────┼────────────────┐
+          │                │                │
+          ▼                ▼                ▼
+     Profile Tools    Action Tools     Utility Tools
+          │                │                │
+          │                │                │
+          ▼                ▼                ▼
+   Profile Data       Pushover          Current Time
+          │            Notifications
+          │                │
+          └────────────────┼────────────────┘
+                           │
+                           ▼
+                      Tool Result
+                           │
+                           ▼
+                          LLM
+                           │
+                           ▼
+                      Final Answer
 ```
 
 ---
 
 ## Features
 
-* Ask questions about my professional profile
-* Retrieve information using LLM Tool Calling
-* Answer questions about:
-
-  * Profile
-  * Skills
-  * Projects
-  * Education
-  * Experience
-  * Certifications
-* Simple Gradio chat interface
+* AI-powered Digital Twin
+* Professional profile Q&A
+* LLM Tool Calling
 * CV-based context
-* Structured tool responses
-* Designed to minimize hallucination
+* Structured tool schemas
+* Gradio chat interface
+* Contact information collection
+* Unknown question logging
+* Current date and time tool
+* Conversation recording
+* Follow-up task creation
+* Pushover notifications
+* Custom dark UI
+* Markdown responses
+* Designed to reduce hallucination
 * No vector database
 * No embeddings
 * No chunking
-* No RAG pipeline
+* No traditional RAG pipeline
 
 ---
 
-## Example Questions
+## Available Tools
 
-The Digital Twin can answer questions such as:
+The Digital Twin currently exposes the following tools to the LLM:
+
+| Tool                      | Purpose                                                |
+| ------------------------- | ------------------------------------------------------ |
+| `record_user_details`     | Records visitor contact information                    |
+| `record_unknown_question` | Logs questions the Digital Twin cannot answer          |
+| `get_current_time`        | Returns the current date and time                      |
+| `search_web`              | Web search interface; currently a placeholder          |
+| `get_profile_info`        | Retrieves profile information; currently a placeholder |
+| `record_conversation`     | Records an important conversation                      |
+| `send_email`              | Email interface; currently a placeholder               |
+| `create_task`             | Creates a follow-up task                               |
+
+### `record_user_details`
+
+Used when a visitor wants to get in touch or expresses interest.
+
+Example:
 
 ```text
-Who is Ahmed Elsayed Taha?
+User:
 
-What are Ahmed's main skills?
-
-What AI projects has Ahmed worked on?
-
-Tell me about Ahmed's graduation project.
-
-What is Ahmed's educational background?
-
-What certifications does Ahmed have?
-
-What technologies does Ahmed use?
-
-Does Ahmed have experience with LLMs?
-
-What kind of AI systems does Ahmed build?
-
-What is Ahmed's experience with RAG?
-
-What programming languages does Ahmed know?
+My name is Ahmed and my email is ahmed@example.com.
+Please save my contact details.
 ```
+
+The LLM can call:
+
+```text
+record_user_details(
+    email="ahmed@example.com",
+    name="Ahmed"
+)
+```
+
+The tool sends a notification through Pushover.
+
+---
+
+### `record_unknown_question`
+
+Used when the Digital Twin does not have enough information to answer a question.
+
+Example:
+
+```text
+User:
+
+What was Ahmed's previous salary?
+```
+
+The system can call:
+
+```text
+record_unknown_question(
+    question="What was Ahmed's previous salary?"
+)
+```
+
+This allows unknown questions to be logged instead of generating unsupported information.
+
+---
+
+### `get_current_time`
+
+Returns the current local date and time.
+
+Example:
+
+```text
+User:
+
+What time is it right now?
+```
+
+The LLM calls:
+
+```text
+get_current_time()
+```
+
+The result is then returned to the LLM so it can generate the final response.
+
+---
+
+### `search_web`
+
+Provides an interface for web search.
+
+Currently, this tool is implemented as a **placeholder** and does not perform a real internet search yet.
+
+It can be extended later to use a search API or another web-search service.
+
+---
+
+### `get_profile_info`
+
+Designed to retrieve information about Ahmed's:
+
+* Skills
+* Education
+* Projects
+* Experience
+* Certifications
+
+The current implementation is a placeholder.
+
+The tool can later be connected directly to the profile data loaded by `context.py`.
+
+---
+
+### `record_conversation`
+
+Used to save a summary of an important conversation.
+
+Example:
+
+```text
+record_conversation(
+    email="ahmed@example.com",
+    summary="Discussed a potential AI Engineer opportunity."
+)
+```
+
+The current implementation sends the information through Pushover.
+
+---
+
+### `send_email`
+
+Provides an interface for sending an email.
+
+The current implementation is a **placeholder** and does not send an actual email yet.
+
+It currently sends a Pushover notification containing the email information.
+
+---
+
+### `create_task`
+
+Used to create a follow-up task.
+
+Example:
+
+```text
+create_task(
+    title="Follow up with recruiter",
+    description="Contact the recruiter about the AI Engineer opportunity."
+)
+```
+
+The current implementation sends a Pushover notification.
+
+---
+
+## Context
+
+The Digital Twin uses two main sources of profile information:
+
+```text
+data/
+
+├── cv.pdf
+└── summary.txt
+```
+
+### CV
+
+`data/cv.pdf` contains the original professional CV.
+
+The PDF text is extracted using `pypdf`.
+
+### Summary
+
+`data/summary.txt` contains a simplified and structured summary of the professional profile.
+
+This gives the LLM additional context about the person it represents.
 
 ---
 
 ## How It Works
 
-The system is based on three main components:
+The system consists of three main layers.
 
-### 1. Context
+### 1. Context Layer
 
-The project uses the CV and a structured summary as the main sources of profile information.
+`context.py` loads the professional information.
 
 ```text
-data/
-├── cv.pdf
-└── summary.txt
+CV
+ │
+ ▼
+PDF Text Extraction
+ │
+ ▼
+Profile Context
+ │
+ ▼
+System Prompt
 ```
 
-`context.py` is responsible for loading and preparing this information.
+The extracted CV content and profile summary are included in the system prompt given to the LLM.
 
 ---
 
-### 2. Tools
+### 2. Tool Layer
 
-The LLM has access to several tools through Tool Calling.
+`tools.py` contains the functions available to the LLM.
 
-Examples:
+Each function has two parts:
 
 ```text
-get_profile()
-get_skills()
-get_projects()
-get_education()
-get_experience()
-get_certificates()
+Python Function
+       +
+Tool Schema
 ```
 
-Each tool returns structured information related to a specific part of the profile.
+The tool schema tells the LLM:
+
+* The tool name
+* What the tool does
+* What parameters it accepts
+* Which parameters are required
 
 For example:
 
 ```text
-User:
-What are Ahmed's technical skills?
-
-        ↓
-
-LLM
-
-        ↓
-
-get_skills()
-
-        ↓
-
-Tool Result
-
-        ↓
-
-LLM
-
-        ↓
-
-Final Answer
+record_user_details
 ```
+
+accepts:
+
+```text
+email
+name
+notes
+```
+
+The LLM can decide when this function should be called.
 
 ---
 
-### 3. LLM
+### 3. LLM Layer
 
-The LLM receives the user's question and decides whether a tool is required.
+`main.py` handles the conversation between the user and the LLM.
 
-If the question requires profile information, the model calls the appropriate tool.
+The basic flow is:
 
-After receiving the tool result, the model generates the final answer.
+```text
+User Message
+     │
+     ▼
+    LLM
+     │
+     ├── No Tool Needed
+     │       │
+     │       ▼
+     │    Final Answer
+     │
+     └── Tool Needed
+             │
+             ▼
+        Tool Call
+             │
+             ▼
+        Tool Execution
+             │
+             ▼
+        Tool Result
+             │
+             ▼
+            LLM
+             │
+             ▼
+        Final Answer
+```
+
+This is the main Tool Calling loop implemented in the application.
+
+---
+
+## Tool Calling Example
+
+For example, when the user asks:
+
+```text
+What time is it right now?
+```
+
+The model can decide to call:
+
+```text
+get_current_time()
+```
+
+The Python application executes the function.
+
+The tool returns:
+
+```text
+2026-09-15 18:20:00
+```
+
+The result is then sent back to the LLM.
+
+The LLM generates the final response:
+
+```text
+The current time is 6:20 PM.
+```
 
 ---
 
@@ -218,13 +443,16 @@ ai-digital-twin/
 
 ### `main.py`
 
-Main application entry point.
+The main application entry point.
 
 Responsible for:
 
-* Initializing the LLM
-* Handling Tool Calling
+* Initializing the LLM client
 * Managing the conversation
+* Sending tool schemas to the LLM
+* Detecting tool calls
+* Executing tools
+* Returning tool results to the LLM
 * Running the Gradio interface
 
 ---
@@ -238,65 +466,87 @@ data/cv.pdf
 data/summary.txt
 ```
 
-It prepares the information that will be used by the tools.
+It extracts the CV text and combines it with the profile summary to create the system prompt.
 
 ---
 
 ### `tools.py`
 
-Contains the tools available to the LLM.
+Contains:
 
-Example:
+* Tool implementations
+* Tool schemas
+* Tool mapping
+* Tool execution logic
+
+The current tools are:
 
 ```text
-get_profile()
-get_skills()
-get_projects()
-get_education()
-get_experience()
-get_certificates()
+record_user_details
+record_unknown_question
+get_current_time
+search_web
+get_profile_info
+record_conversation
+send_email
+create_task
 ```
 
 ---
 
 ### `styles.py`
 
-Contains the custom CSS used to customize the Gradio interface.
+Contains the custom CSS and JavaScript used to customize the Gradio interface.
+
+The interface uses a dark AI-oriented visual style with:
+
+* Dark background
+* Gold accents
+* Purple accents
+* Custom message styling
+* Responsive layout
+* Custom input styling
 
 ---
 
 ### `data/cv.pdf`
 
-The original CV containing the professional profile.
+The professional CV used as a source of profile information.
 
 ---
 
 ### `data/summary.txt`
 
-A simplified and structured summary of the profile.
-
-This makes it easier to organize information that the tools may need.
+A structured summary of the professional profile used to provide additional context to the Digital Twin.
 
 ---
 
 ## Why Tool Calling Instead of RAG?
 
-This project does not require a full RAG architecture because the information is:
+This project does not require a full RAG architecture for its current use case.
 
-* Small in size
+The profile information is:
+
+* Relatively small
 * Structured
-* Relatively static
-* Organized into clear categories
+* Mostly static
+* Divided into clear categories
 
-For example, when the user asks about projects, the system does not need semantic search across thousands of documents.
-
-It can simply call:
+For a small professional profile, introducing:
 
 ```text
-get_projects()
+Embeddings
+      ↓
+Vector Database
+      ↓
+Similarity Search
+      ↓
+Retrieved Chunks
 ```
 
-This keeps the architecture simple and makes the Digital Twin easier to understand and maintain.
+would add unnecessary complexity.
+
+Instead, Tool Calling provides a simpler architecture where the LLM can interact with specific functions when needed.
 
 ---
 
@@ -306,17 +556,23 @@ This keeps the architecture simple and makes the Digital Twin easier to understa
 
 ```text
 Question
-   ↓
+   │
+   ▼
 Embedding
-   ↓
+   │
+   ▼
 Vector Database
-   ↓
+   │
+   ▼
 Similarity Search
-   ↓
+   │
+   ▼
 Retrieved Chunks
-   ↓
+   │
+   ▼
 LLM
-   ↓
+   │
+   ▼
 Answer
 ```
 
@@ -324,49 +580,187 @@ Answer
 
 ```text
 Question
-   ↓
+   │
+   ▼
 LLM
-   ↓
+   │
+   ▼
 Tool Calling
-   ↓
-Structured Profile Data
-   ↓
+   │
+   ▼
+Tool Execution
+   │
+   ▼
+Tool Result
+   │
+   ▼
 LLM
-   ↓
+   │
+   ▼
 Answer
 ```
+
+The important difference is that **RAG retrieves relevant text**, while **Tool Calling allows the LLM to interact with functions**.
 
 ---
 
 ## Design Principle
 
-The Digital Twin should only provide information supported by the available profile data.
+The Digital Twin should represent the actual professional profile rather than inventing information.
 
-If the requested information is not available, the system should clearly state that it does not have enough information instead of inventing an answer.
+If the requested information is not available, the system should avoid hallucinating an answer.
 
-Example:
+For example:
 
 ```text
 User:
-What was Ahmed's salary at his previous company?
+
+What was Ahmed's previous salary?
 
 AI:
+
 I don't have information about Ahmed's previous salary.
 ```
 
-This is important because the main goal is to create an accurate representation of the profile rather than a system that simply generates plausible answers.
+The system can also use:
+
+```text
+record_unknown_question()
+```
+
+to log the question for future improvement.
+
+This creates a feedback loop where unanswered questions can be reviewed and used to improve the Digital Twin later.
+
+---
+
+## Example Questions
+
+The Digital Twin can answer questions such as:
+
+```text
+Who is Ahmed Elsayed Taha?
+
+What are Ahmed's main technical skills?
+
+What AI projects has Ahmed worked on?
+
+Tell me about Ahmed's graduation project.
+
+What is Ahmed's educational background?
+
+What certifications does Ahmed have?
+
+What technologies does Ahmed use?
+
+Does Ahmed have experience with LLMs?
+
+What kind of AI systems does Ahmed build?
+
+What is Ahmed's experience with RAG?
+
+What programming languages does Ahmed know?
+```
+
+It can also perform tool-based actions such as:
+
+```text
+What time is it right now?
+
+My name is John and my email is john@example.com.
+Please save my contact details.
+
+Please record this conversation.
+
+Create a task to follow up with the recruiter.
+```
+
+---
+
+## Testing the Tools
+
+You can test the Tool Calling system directly from the Gradio interface.
+
+### Test Current Time
+
+```text
+What time is it right now?
+```
+
+Expected terminal output:
+
+```text
+Tool called: get_current_time
+```
+
+---
+
+### Test Contact Collection
+
+```text
+My name is John and my email is john@example.com.
+Please save my contact details.
+```
+
+Expected terminal output:
+
+```text
+Tool called: record_user_details
+```
+
+A Pushover notification should also be generated if the Pushover credentials are configured correctly.
+
+---
+
+### Test Unknown Questions
+
+```text
+What is Ahmed's favorite football team?
+```
+
+If the information is not available, the system can call:
+
+```text
+record_unknown_question
+```
+
+Expected terminal output:
+
+```text
+Tool called: record_unknown_question
+```
+
+---
+
+### Test Task Creation
+
+```text
+Create a task titled "Follow up with recruiter"
+with description "Contact the recruiter about the AI Engineer opportunity."
+```
+
+Expected terminal output:
+
+```text
+Tool called: create_task
+```
 
 ---
 
 ## Technology Stack
 
 * Python
-* LLM API
+* OpenAI-compatible API
+* Groq API
+* `openai` Python SDK
+* `openai/gpt-oss-120b`
 * LLM Tool Calling / Function Calling
 * Gradio
 * Pydantic
-* PDF text extraction
-* HTML/CSS for UI customization
+* PyPDF
+* Requests
+* Python-dotenv
+* HTML/CSS/JavaScript
 
 ---
 
@@ -376,19 +770,20 @@ Clone the repository:
 
 ```bash
 git clone <YOUR_GITHUB_REPOSITORY_URL>
+
 cd ai-digital-twin
 ```
 
-Create a virtual environment:
+### Create a Conda Environment
 
 ```bash
-python -m venv .venv
+conda create -n ai-digital-twin python=3.11 -y
 ```
 
-Activate it on macOS/Linux:
+Activate it:
 
 ```bash
-source .venv/bin/activate
+conda activate ai-digital-twin
 ```
 
 Install the dependencies:
@@ -401,78 +796,140 @@ pip install -r requirements.txt
 
 ## Environment Variables
 
-Create a `.env` file:
+Create a `.env` file from the example:
 
 ```bash
 cp .env.example .env
 ```
 
-Then add your LLM API key.
+Then add your API credentials.
 
 Example:
 
 ```env
-LLM_API_KEY=your_api_key_here
+GROQ_API_KEY=your_groq_api_key
+
+PUSHOVER_USER=your_pushover_user
+PUSHOVER_TOKEN=your_pushover_token
 ```
 
+The application uses the Groq OpenAI-compatible API endpoint.
+
 Do not commit your `.env` file to GitHub.
+
+Make sure `.env` is included in `.gitignore`.
 
 ---
 
 ## Run the Application
 
-Start the application with:
+Start the Digital Twin:
 
 ```bash
 python main.py
 ```
 
-After starting the application, open the Gradio interface in your browser.
+Gradio will start the local web interface.
+
+Open the displayed local URL in your browser.
 
 ---
 
-## Example Interaction
+## Notifications
+
+The project uses **Pushover** for notifications.
+
+Notifications can be triggered when:
+
+* A visitor provides contact information
+* An unknown question is recorded
+* An important conversation is recorded
+* A follow-up task is created
+* An email action is requested
+
+Pushover is used as a notification mechanism and is not responsible for generating the AI responses.
+
+---
+
+## Current Limitations
+
+Some tools are currently implemented as placeholders.
+
+### Web Search
 
 ```text
-User:
-Tell me about Ahmed's graduation project.
-
-AI:
-Ahmed's graduation project focused on Alzheimer’s
-Detection with Generative AI...
-
-User:
-What technologies were used?
-
-AI:
-The project used technologies including...
-
-User:
-Does Ahmed have experience with LLMs?
-
-AI:
-Yes. Ahmed has worked on several LLM-related projects
-and technologies including RAG, AI Agents, and LLM-based
-applications.
+search_web()
 ```
 
-The exact response is generated from the information available through the profile tools.
+Currently returns a placeholder response instead of performing a real internet search.
+
+### Profile Retrieval
+
+```text
+get_profile_info()
+```
+
+Currently returns a placeholder response.
+
+### Email
+
+```text
+send_email()
+```
+
+Currently does not send an actual email. It sends a notification through Pushover instead.
+
+### Task Management
+
+```text
+create_task()
+```
+
+Currently sends a Pushover notification instead of creating a task in an external task-management system.
+
+These tools are intentionally structured so they can be connected to real services in future versions.
+
+---
+
+## Future Improvements
+
+Possible future extensions include:
+
+* Real web search integration
+* Real email sending
+* CRM integration
+* Calendar integration
+* External task-management integration
+* Persistent conversation storage
+* Better profile retrieval
+* Authentication
+* Analytics dashboard
+* Conversation evaluation
+* Tool-call monitoring
+* Production deployment
+* Voice interaction
+* WhatsApp integration
 
 ---
 
 ## Project Goal
 
-The goal of this project is to build a simple but practical **AI Digital Twin** that can represent my professional profile and communicate information about my background through natural language.
+The goal of this project is to build a practical **AI Digital Twin** that can represent my professional profile and interact with visitors using natural language.
 
-The project also demonstrates practical usage of:
+The project demonstrates practical implementation of:
 
 * LLMs
 * Tool Calling
-* Structured data
+* Function schemas
 * Prompt engineering
+* Context management
+* External actions
+* Structured data
 * AI application architecture
 * Gradio
 * Python
+
+The main focus is not simply generating text, but building an AI application that can **reason about when to use tools and interact with external functions**.
 
 ---
 
